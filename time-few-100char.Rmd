@@ -1,0 +1,171 @@
+---
+title: "Leitura do tempo de resposta para 100 caracteres e poucos usuários, para os 2 níveis(add e del)."
+author: "Jobson Lucas Dias, José Benardi Nunes, Rafael Albuquerque"
+output: html_document
+---
+
+Neste arquivo, iremos comparar os dados das medições Log1TIME e Log2TIME.
+
+```{r setup, include=FALSE, echo=FALSE}
+require(ggplot2, quietly = TRUE)
+require(GGally, quietly = TRUE)
+require(curl, quietly = TRUE)
+require(devtools, quietly = TRUE)
+require(reshape2, quietly = TRUE)
+require(dplyr, quietly = TRUE)
+require(plotly, quietly = TRUE)
+require(tibble, quietly = TRUE)
+library(knitr, quietly = TRUE)
+library(cluster)
+library(graphics)
+library(ggdendro)
+library(plotly)
+library(tidyr)
+library("ggplot2", lib.loc="~/R/win-library/3.3")
+library(ggfortify, quietly = TRUE)
+```
+
+```{r, echo=FALSE}
+time_few_add = read.csv("C:/Users/Lucas/Desktop/resultBatches-adsd/time/few users/Log1TIME-add-100.csv")
+time_few_del = read.csv("C:/Users/Lucas/Desktop/resultBatches-adsd/time/few users/Log2TIME-del-100.csv")
+```
+
+```{r}
+#N é o tamanho da população. Nesse caso 60.
+#Z é o valor correspondente ao nível de confiança da tabela normal Z. Para 95% de confiança, Z = 1.96
+#p é a proporção que queremos encontrar. Geralmente, quando não se sabe, usa-se 50%, que é o pior caso.
+#e é o erro aceitável. Como a porcentagem de confiança que queremos é de 95%, então o erro será de 5%. 
+tam_amostra = function(N,Z,p,e){
+  numerador = (N*(Z*Z)*p*(1-p))
+  divisor = (N-1)*(e*e)+Z*Z*p*(1-p)
+  return (numerador/divisor)
+}
+tam_pop = 60
+N = 60
+Z = 1.96
+p = 0.5
+e = 0.05
+tam_amost_95_conf = tam_amostra(tam_pop,Z,p,e)
+```
+
+# A estratégia utilizada:
+Como a api utilizada usa como base para o cálculo dos milissegundos a meia noite de janeiro de 1970 UTC, e portanto, o tempo em milissegundos dará um valor muito grande, não é tão útil colocarmos no gráfico os valores dos milissegundos em si, pois não teriam tanta relevância. É mais adequado, no entanto, colocarmos o valor da diferença, que está medida em milissegundos.
+
+```{r, echo=FALSE}
+time_few_add_dif = time_few_add %>% select(diferenca_tempo_n1)
+time_few_del_dif = time_few_del %>% select(diferenca_tempo_n2)
+
+time_few_2lvls_dif = time_few_add_dif 
+time_few_2lvls_dif['diferenca_tempo_n2'] = time_few_del_dif # Add como uma nova coluna. Se der merge, vão se multiplicar, ficando 3600.
+
+names(time_few_2lvls_dif) = c('dif_tempo_add', 'dif_tempo_del')
+
+
+```
+
+# Gráfico para operação de add com poucos usuários e um arquivo de 100 caracteres.
+
+```{r, echo=FALSE}
+leitura = 1:60
+diferenca_em_ms_add = time_few_2lvls_dif$dif_tempo_add
+g=ggplot(time_few_2lvls_dif, 
+       aes(y = diferenca_em_ms_add, x = leitura)) +
+  geom_point() + 
+  labs(title = "Gráfico para operação de add com 100 caracteres e poucos users",  y = "Intervalo de tempo - add(ms)", x = "Nº da leitura")
+ggplotly(g)
+
+```
+
+# Gráfico para operação de deletar com poucos usuários e um arquivo de 100 caracteres.
+
+```{r, echo=FALSE}
+diferenca_em_ms_del = time_few_2lvls_dif$dif_tempo_del
+g=ggplot(time_few_2lvls_dif, 
+       aes(y = diferenca_em_ms_del, x = leitura)) +
+  geom_point() + 
+  labs(title = "Gráfico para operação de deletar com 100 caracteres e poucos users",  y = "Intervalo de tempo - deletar(ms)", x = "Nº da leitura")
+ggplotly(g)
+
+```
+
+#Análise para operação de add:
+Notamos que, no gráfico de add, existem indícios de alguns outliers, como na leitura 41 (cujo valor é 1131 milissegundos), pois ela se distanciou muito das demais em termos de diferença em milissegundos. Vamos fazer uma visualização de um box-plot para essa medição de modo a constarmos se, de fato, existem outliers.
+
+```{r, echo=FALSE}
+boxplot(time_few_add_dif, ylab = "Intervalo de tempo - add(ms)")
+```
+
+##Conclusão
+Nossa asserção sobre a existência de outliers estava correta e foi confirmada pelo boxplot acima. Existem, ao todo, 3 outliers. Como a média, a variância e o desvio padrão não são medidas robustas, elas tenderão a sofrer muito o impacto desses valores. Dessa forma, a mediana talvez fosse uma medida estatística mais apropriada, já que ela não sofre com a presença deles.
+
+
+#Análise para operação de deletar(del):
+Notamos que, no gráfico referente à operação deletar, existem indícios de alguns outliers, como na leitura 39, pois ela se distanciou de maneira singular com relação às demais em termos de diferença em milissegundos. Vamos fazer uma visualização de um box-plot para essa medição de modo a constarmos se, de fato, existe algum outlier.
+
+```{r, echo=FALSE}
+boxplot(time_few_del_dif, ylab = "Intervalo de tempo - deletar(ms)")
+```
+
+##Conclusão
+De fato, nossa hipótese sobre a presença de outlier estava correta e foi confirmada pelo boxplot acima. Como a média, a variância e o desvio padrão não são medidas robustas, elas tenderão a sofrer com impacto desse outlier. Dessa forma, a mediana talvez fosse uma medida estatística mais apropriada, já que ela não sofre com a presença deles.
+
+#Medidas estatísticas para operação de add
+Abaixo veremos a média, mediana, e desvio padrão, além do intervalo de confiança(i.c.) com 95% de confiança para os dados dessa operação. Também vamos avaliar o grau de representatividade da média através do coeficiente de variação(cv), que também server para nos indicar a homogeneidade dos dados(quanto menor o c.v., maior a homogeneidade).Se o valor do cv for menor que 50%, então a média é representativa; não, caso contrário.
+
+```{r, echo=FALSE}
+aux_add = time_few_add_dif$diferenca_tempo_n1
+
+media_add = mean(aux_add)
+median_add = median(aux_add)
+variancia_add = var(aux_add)
+dp_add = sd(aux_add)
+cv_add = (dp_add/media_add)*100
+
+standError_media_add = dp_add/sqrt(tam_pop) 
+margemDeErro_add = qnorm(.975)*standError_media_add
+
+ic_media_add = media_add + c(-margemDeErro_add, margemDeErro_add)
+ic_media_add
+```
+
+```{r, echo=FALSE}
+sprintf("o valor da média para as distâncias da operação add é: %f",media_add)
+sprintf("o valor da mediana para as distâncias da operação add é: %f",median_add)
+sprintf("o valor da variância para as distâncias da operação add é: %f", variancia_add)
+sprintf("o valor do desvio padrão para as distâncias da operação add é: %f", dp_add)
+sprintf("o valor do do coeficiente de variação para as distâncias da operação add é: %f%%", cv_add)
+sprintf("Com 95%% de confiança, o intervalo que compreende o verdadeiro valor da média para operação de add com poucos usuários e 100 caracteres está entre %f e %f.", ic_media_add[1], ic_media_add[2])
+```
+
+##Interpretação:
+
+
+#Medidas estatísticas para operação de deletar
+Abaixo veremos a média, mediana, e desvio padrão, além do intervalo de confiança(i.c.) com 95% de confiança para os dados dessa operação. Também, de modo similar à operação anterior, vamos avaliar o grau de representatividade da média através do coeficiente de variação(cv), bem como a homogeneidade dos dados.
+
+```{r, echo=FALSE}
+aux_del = time_few_del_dif$diferenca_tempo_n2
+
+media_del = mean(aux_del)
+median_del = median(aux_del)
+variancia_del = var(aux_del)
+dp_del = sd(aux_del)
+cv_del = (dp_del/media_del)*100
+
+standError_media_del = dp_del/sqrt(tam_pop) 
+margemDeErro_del = qnorm(.975)*standError_media_del
+
+ic_media_del = media_del + c(-margemDeErro_del, margemDeErro_del)
+ic_media_del
+```
+
+```{r, echo=FALSE}
+sprintf("o valor da média para as distâncias da operação deletar é: %f", media_del)
+sprintf("o valor da mediana para as distâncias da operação deletar é: %f", median_del)
+sprintf("o valor da variância para as distâncias da operação deletar é: %f", variancia_del)
+sprintf("o valor do desvio padrão para as distâncias da operação deletar é: %f", dp_del)
+sprintf("o valor do do coeficiente de variação para as distâncias da operação deletar é: %f%%", cv_del)
+sprintf("Com 95%% de confiança, o intervalo que compreende o verdadeiro valor da média para operação de deletar com poucos usuários e 100 caracteres está entre %f e %f.", ic_media_del[1], ic_media_del[2])
+```
+
+##Interpretação:
