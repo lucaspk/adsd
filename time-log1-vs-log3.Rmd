@@ -1,0 +1,178 @@
+---
+title: "Leitura do tempo de resposta para 100 caracteres(poucos usuários) e 250000 caracteres(poucos usuários) para operação add."
+author: "Grupo: Jobson Lucas Dias, José Benardi Nunes, Rafael Albuquerque"
+output: html_document
+---
+#Arquivos aqui avaliados
+Neste arquivo, iremos comparar os dados das medições Log1TIME e Log2TIME, que dizem respeito ao tempo de resposta para ambos com poucos poucos usuários e a mesma operação, divergindo apenas no total de caracteres, sendo, respectivamente, 100 caracteres e 250000 caracteres.
+
+```{r setup, include=FALSE, echo=FALSE}
+require(ggplot2, quietly = TRUE)
+require(GGally, quietly = TRUE)
+require(curl, quietly = TRUE)
+require(devtools, quietly = TRUE)
+require(reshape2, quietly = TRUE)
+require(dplyr, quietly = TRUE)
+require(plotly, quietly = TRUE)
+require(tibble, quietly = TRUE)
+library(knitr, quietly = TRUE)
+library(cluster)
+library(graphics)
+library(ggdendro)
+library(plotly)
+library(tidyr)
+library("ggplot2", lib.loc="~/R/win-library/3.3")
+library(ggfortify, quietly = TRUE)
+```
+
+```{r, echo=FALSE}
+time_100_add = read.csv("C:/Users/Lucas/Desktop/resultBatches-adsd/time/few users/Log1TIME-add-100.csv")
+time_250000_add = read.csv("C:/Users/Lucas/Desktop/resultBatches-adsd/time/few users/Log3TIME-add-250000.csv")
+```
+
+```{r, echo=FALSE}
+#N é o tamanho da população. Nesse caso 60.
+#Z é o valor correspondente ao nível de confiança da tabela normal Z. Para 95% de confiança, Z = 1.96
+#p é a proporção que queremos encontrar. Geralmente, quando não se sabe, usa-se 50%, que é o pior caso.
+#e é o erro aceitável. Como a porcentagem de confiança que queremos é de 95%, então o erro será de 5%. 
+tam_amostra = function(N,Z,p,e){
+  numerador = (N*(Z*Z)*p*(1-p))
+  divisor = (N-1)*(e*e)+Z*Z*p*(1-p)
+  return (numerador/divisor)
+}
+tam_pop = 60
+Z = 1.96
+p = 0.5
+e = 0.05
+tam_amost_95_conf = tam_amostra(tam_pop,Z,p,e)
+```
+
+# A estratégia utilizada:
+Como a api Java utilizada usa como base para o cálculo dos milissegundos a meia noite de janeiro de 1970 UTC, e portanto, o tempo em milissegundos dará um valor muito grande, não é tão útil colocarmos no gráfico os valores deles em si; é mais adequado, no entanto, colocarmos o valor da diferença, que também está medida em milissegundos.
+
+```{r, echo=FALSE}
+time_100_add_dif = time_100_add %>% select(diferenca_tempo_n1)
+time_250000_add_dif = time_250000_add %>% select(diferenca_tempo_n3)
+
+time_few_2lvls_dif = time_100_add_dif 
+time_few_2lvls_dif['diferenca_tempo_n3'] = time_250000_add_dif # Add como uma nova coluna. Se der merge, vão se multiplicar, ficando 3600.
+
+names(time_few_2lvls_dif) = c('dif_100_add', 'dif_250000_add')
+
+
+```
+
+# Gráfico para operação de add com poucos usuários e um arquivo de 100 caracteres.
+
+```{r, echo=FALSE}
+total_leituras = 1:60
+diferenca_em_ms_add = time_few_2lvls_dif$dif_100_add
+
+g_add = ggplot(data = time_few_2lvls_dif, 
+               aes(y = diferenca_em_ms_add, 
+                   x = total_leituras)) +
+        geom_point() + 
+        labs(title = "Gráfico para operação de add com 100 caracteres e poucos users",  
+             y = "Intervalo de tempo - add 100 chars(ms)", 
+             x = "Nº da leitura")
+ggplotly(g_add)
+
+```
+
+# Gráfico para operação de add com poucos usuários e um arquivo de 250000 caracteres.
+
+```{r, echo=FALSE}
+diferenca_em_ms_250000_add = time_few_2lvls_dif$dif_250000_add
+
+g_add_250k = ggplot(time_few_2lvls_dif, 
+               aes(y = diferenca_em_ms_250000_add,
+               x = total_leituras)) +
+        geom_point() + 
+        labs(title = "Gráfico para operação de add com 250000 caracteres e poucos users",  
+             y = "Intervalo de tempo - add 250000 chars(ms)", 
+             x = "Nº da leitura")
+ggplotly(g_add_250k)
+
+```
+
+#Análise para operação de add com 100 chars:
+Notamos que, no gráfico de add com 100 chars, existem indícios de alguns outliers, como na leitura 41 (cujo valor é 1131 milissegundos), pois ela se distanciou muito das demais em termos de diferença em milissegundos. Vamos fazer uma visualização de um box-plot para essa medição de modo a constarmos se, de fato, existem outliers.
+
+```{r, echo=FALSE}
+boxplot(time_100_add_dif, ylab = "Intervalo de tempo - add 250000 chars(ms)")
+```
+
+##Conclusão
+Nossa asserção sobre a existência de outliers estava correta e foi confirmada pelo boxplot acima. Existem, ao todo, 3 outliers. Como a média, a variância e o desvio padrão não são medidas robustas, elas tenderão a sofrer muito o impacto desses valores. Dessa forma, a mediana talvez fosse uma medida estatística mais apropriada, já que ela não sofre com a presença deles.
+
+
+#Análise para operação de add com 250000 chars:
+Notamos que, no gráfico referente à operação de add com 250000 chars, existem indícios de alguns outliers, como na leitura 21(792), pois ela se distanciou de maneira singular com relação às demais em termos de diferença em milissegundos. Vamos fazer uma visualização de um box-plot para essa medição de modo a constarmos se, de fato, existe algum outlier.
+
+```{r, echo=FALSE}
+boxplot(time_250000_add_dif, ylab = "Intervalo de tempo - add 100 chars(ms)")
+```
+
+##Conclusão
+De fato, nossa hipótese sobre a presença de outlier estava correta e foi confirmada pelo boxplot acima. Como a média, a variância e o desvio padrão não são medidas robustas, elas tenderão a sofrer com impacto desse outlier. Dessa forma, a mediana talvez fosse uma medida estatística mais apropriada, já que ela não sofre com a presença deles.
+
+#Medidas estatísticas para operação de add com 100 chars
+Abaixo veremos a média, mediana, e desvio padrão, além do intervalo de confiança(i.c.) com 95% de confiança para os dados dessa operação. Também vamos avaliar o grau de representatividade da média através do coeficiente de variação(cv), que também server para nos indicar a homogeneidade (se os valores estão ao redor da média), a precisão dos dados e a variabilidade com relação à média (quanto o conjunto se afasta da média). Como resultado direto, temos que quanto menor o c.v., maior a homogeneidade e a precisão do conjunto de dados. Além disso, se o valor do cv for menor que 50%, então a média é dita representativa; não, caso contrário.
+
+```{r, echo=FALSE}
+aux_add = time_100_add_dif$diferenca_tempo_n1
+
+media_add = mean(aux_add)
+median_add = median(aux_add)
+variancia_add = var(aux_add)
+dp_add = sd(aux_add)
+cv_add = (dp_add/media_add)*100
+
+standError_media_add = dp_add/sqrt(tam_pop) 
+margemDeErro_add = qnorm(.975)*standError_media_add
+
+ic_media_add = media_add + c(-margemDeErro_add, margemDeErro_add)
+```
+
+```{r, echo=FALSE}
+sprintf("o valor da média para as distâncias da operação add é: %f",media_add)
+sprintf("o valor da mediana para as distâncias da operação add é: %f",median_add)
+sprintf("o valor da variância para as distâncias da operação add é: %f", variancia_add)
+sprintf("o valor do desvio padrão para as distâncias da operação add é: %f", dp_add)
+sprintf("o valor do coeficiente de variação para as distâncias da operação add é: %f%%", cv_add)
+sprintf("Com 95%% de confiança, o intervalo que compreende o verdadeiro valor da média para operação de add com poucos usuários e 100 caracteres está entre %f e %f.", ic_media_add[1], ic_media_add[2])
+```
+
+##Interpretação: 
+Apesar do outliers, vemos que nossa média ainda permanece significativa, temos um coeficiente de variação de menos de 50% (aproximadamente 15.71%). Poderíamos classificar esse coeficiente de variação como tendo uma dispersão média e relativamente homogênea, além de uma boa precisão. Em outras palavras, tivemos que apenas 15.71% dos valores se afastam da média(os outros estão ao redor/bem próximos dela). Também temos que o intervalo de confiança foi relativamente extenso, o que limita um pouco nossa capacidade de ter um conhecimento sobre o valor real da média de maneira significativa. Talvez isso se deva ao número de experimentações que foi de apenas 60 para cada operação. Sobre as medidas de dispersão: como era de se esperar, a variância resultou em um valor assustadoramente grande e o desvio padrão foi expressivo. Isso é consequência direta da presença dos outliers.
+
+
+#Medidas estatísticas para operação de add com 250000 chars
+Abaixo veremos a média, mediana, e desvio padrão, além do intervalo de confiança(i.c.) com 95% de confiança para os dados dessa operação. Também, de modo similar à operação anterior, vamos avaliar o grau de representatividade da média através do coeficiente de variação(cv), bem como a homogeneidade dos dados.
+
+```{r, echo=FALSE}
+aux_250000_add = time_250000_add_dif$diferenca_tempo_n3
+
+media_250000_add = mean(aux_250000_add)
+median_250000_add = median(aux_250000_add)
+variancia_250000_add = var(aux_250000_add)
+dp_250000_add = sd(aux_250000_add)
+cv_250000_add = (dp_250000_add/media_250000_add)*100
+
+standError_media_250000_add = dp_250000_add/sqrt(tam_pop) 
+margemDeErro_250000_add = qnorm(.975)*standError_media_250000_add
+
+ic_media_250000_add = media_250000_add + c(-margemDeErro_250000_add, margemDeErro_250000_add)
+```
+
+```{r, echo=FALSE}
+sprintf("o valor da média para as distâncias da operação add com 250000 chars é: %f", media_250000_add)
+sprintf("o valor da mediana para as distâncias da operação add com 250000 chars é: %f", median_250000_add)
+sprintf("o valor da variância para as distâncias da operação add com 250000 chars é: %f", variancia_250000_add)
+sprintf("o valor do desvio padrão para as distâncias da operação add com 250000 chars é: %f", dp_250000_add)
+sprintf("o valor do coeficiente de variação para as distâncias da operação add com 250000 chars é: %f%%", cv_250000_add)
+sprintf("Com 95%% de confiança, o intervalo que compreende o verdadeiro valor da média para operação de add com 250000 chars com poucos usuários e 100 caracteres está entre %f e %f.", ic_media_250000_add[1], ic_media_250000_add[2])
+```
+
+##Interpretação:
+Surpreendentemente, vemos que nosso cv para média da operação add com 250000 chars foi ainda menor(apenas 8.42%), o que indica, por exemplo, que a homogeneidade dos resultados aqui é maior que para operação de add com 100 chars e que a variabilidade com relação à média foi baixa(a imensa maioria dos valores estão ao redor da média). Como resultado, temos que nossos dados possuem baixa dipersão, ótima precisão e alta homogeneidade. Também temos que a média é significativa(8.42% < 50%). Obtivemos um intervalo de confiança aqui, digamos, mais significativo, pelo fato dele ser menos extenso que para operação de add com 100 chars vista anteriormente. Também obtivemos que, com a existência de outliers, nossa variância ficou com um valor grande, embora menor que o valor obtido anteriormente. O mesmo comentário poderia ser feito sobre o desvio padrão.
