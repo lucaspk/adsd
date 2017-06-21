@@ -1,10 +1,10 @@
 ---
-title: "Leitura do tempo de resposta para 100 caracteres(poucos usuários) e 250000 caracteres(poucos usuários) para operação add."
+title: "Medições referentes à métrica do tempo de resposta."
 author: "Grupo: Jobson Lucas Dias, José Benardi Nunes, Rafael Albuquerque"
 output: html_document
 ---
 #Arquivos aqui avaliados
-Neste arquivo, iremos comparar os dados das medições Log1TIME e Log2TIME, que dizem respeito ao tempo de resposta para ambos com poucos poucos usuários e a mesma operação, divergindo apenas no total de caracteres, sendo, respectivamente, 100 caracteres e 250000 caracteres.
+Neste arquivo, iremos comparar os dados das medições referentes aos tempos de respostas obtidos para os fatores(operação de add e remover) e níveis escolhidos(100 e 250 000 caracteres; poucos e muitos usuários).
 
 ```{r setup, include=FALSE, echo=FALSE}
 require(ggplot2, quietly = TRUE)
@@ -26,8 +26,19 @@ library(ggfortify, quietly = TRUE)
 ```
 
 ```{r, echo=FALSE}
-time_100_add = read.csv("C:/Users/Lucas/Desktop/resultBatches-adsd/time/few users/Log1TIME-add-100.csv")
-time_250000_add = read.csv("C:/Users/Lucas/Desktop/resultBatches-adsd/time/few users/Log3TIME-add-250000.csv")
+#lendo os arquivos referentes ao tempo de resposta.
+
+#few users
+log01 = read.csv("C:/Users/Lucas/Desktop/resultBatches-adsd/time/few users/Log1TIME-add-100.csv")
+log02 = read.csv("C:/Users/Lucas/Desktop/resultBatches-adsd/time/few users/Log2TIME-del-100.csv")
+log03 = read.csv("C:/Users/Lucas/Desktop/resultBatches-adsd/time/few users/Log3TIME-add-250000.csv")
+log04 = read.csv("C:/Users/Lucas/Desktop/resultBatches-adsd/time/few users/Log4TIME-del-250000.csv")
+
+#many users
+log05 = read.csv("C:/Users/Lucas/Desktop/resultBatches-adsd/time/many users/Log5TIME-add-100.csv")
+log07 = read.csv("C:/Users/Lucas/Desktop/resultBatches-adsd/time/many users/Log7TIME-add-250000.csv")
+log06 = read.csv("C:/Users/Lucas/Desktop/resultBatches-adsd/time/many users/Log6TIME-del-100.csv")
+log08 = read.csv("C:/Users/Lucas/Desktop/resultBatches-adsd/time/many users/Log8TIME-del-250000.csv")
 ```
 
 ```{r, echo=FALSE}
@@ -51,55 +62,186 @@ tam_amost_95_conf = tam_amostra(tam_pop,Z,p,e)
 Como a api Java utilizada usa como base para o cálculo dos milissegundos a meia noite de janeiro de 1970 UTC, e portanto, o tempo em milissegundos dará um valor muito grande, não é tão útil colocarmos no gráfico os valores deles em si; é mais adequado, no entanto, colocarmos o valor da diferença, que também está medida em milissegundos.
 
 ```{r, echo=FALSE}
-time_100_add_dif = time_100_add %>% select(diferenca_tempo_n1)
-time_250000_add_dif = time_250000_add %>% select(diferenca_tempo_n3)
+log01_dif = log01 %>% select(diferenca_tempo_n1)
+log02_dif = log02 %>% select(diferenca_tempo_n2)
+log03_dif = log03 %>% select(diferenca_tempo_n3)
+log04_dif = log04 %>% select(diferenca_tempo_n4)
+log05_dif = log05 %>% select(diferenca_tempo_n5)
+log06_dif = log06 %>% select(diferenca_tempo_n6)
+log07_dif = log07 %>% select(diferenca_tempo_n7)
+log08_dif = log08 %>% select(diferenca_tempo_n8)
 
-time_few_2lvls_dif = time_100_add_dif 
-time_few_2lvls_dif['diferenca_tempo_n3'] = time_250000_add_dif # Add como uma nova coluna. Se der merge, vão se multiplicar, ficando 3600.
-
-names(time_few_2lvls_dif) = c('dif_100_add', 'dif_250000_add')
-
-
-```
-
-# Gráfico para operação de add com poucos usuários e um arquivo de 100 caracteres.
-
-```{r, echo=FALSE}
 total_leituras = 1:60
-diferenca_em_ms_add = time_few_2lvls_dif$dif_100_add
+```
 
-g_add = ggplot(data = time_few_2lvls_dif, 
-               aes(y = diferenca_em_ms_add, 
-                   x = total_leituras)) +
-        geom_point() + 
+# Gráficos das leituras ao longo do tempo para todos os logs
+
+## Gráfico(log01) para operação de add com poucos usuários e um arquivo de 100 caracteres.
+
+```{r, echo=FALSE, fig.height=3, fig.width=5}
+
+diferenca_log01 = log01_dif$diferenca_tempo_n1
+
+g_log01 = ggplot() +
+        geom_point(data = log01_dif, 
+               aes(y = diferenca_log01, 
+                   x = total_leituras,
+                   text = paste0("Nº da leitura: ", total_leituras, 
+                                 "<br>Diferenca de tempo(ms): ", diferenca_log01))) + 
         labs(title = "Gráfico para operação de add com 100 caracteres e poucos users",  
-             y = "Intervalo de tempo - add 100 chars(ms)", 
+             y = "Intervalo de tempo - operação add(ms)", 
              x = "Nº da leitura")
-ggplotly(g_add)
+
+ggplotly(g_log01, tooltip = "text")
 
 ```
 
-# Gráfico para operação de add com poucos usuários e um arquivo de 250000 caracteres.
+## Gráfico(log02) para operação de del com poucos usuários e um arquivo de 100 caracteres.
 
-```{r, echo=FALSE}
-diferenca_em_ms_250000_add = time_few_2lvls_dif$dif_250000_add
+```{r, echo=FALSE, fig.height=3, fig.width=5}
 
-g_add_250k = ggplot(time_few_2lvls_dif, 
-               aes(y = diferenca_em_ms_250000_add,
-               x = total_leituras)) +
-        geom_point() + 
+diferenca_log02 = log02_dif$diferenca_tempo_n2
+
+g_log02 = ggplot() +
+        geom_point(data = log02_dif, 
+               aes(y = diferenca_log02, 
+                   x = total_leituras,
+                   text = paste0("Nº da leitura: ", total_leituras, 
+                                 "<br>Diferenca de tempo(ms): ", diferenca_log02))) + 
+        labs(title = "Gráfico para operação de del com 100 caracteres e poucos users",  
+             y = "Intervalo de tempo - operação del(ms)", 
+             x = "Nº da leitura")
+
+ggplotly(g_log02, tooltip = "text")
+
+```
+
+## Gráfico(log03) para operação de add com poucos usuários e um arquivo de 250000 caracteres.
+
+```{r, echo=FALSE, fig.height=3, fig.width=5}
+
+diferenca_log03 = log03_dif$diferenca_tempo_n3
+
+g_log03 = ggplot() +
+        geom_point(data = log03_dif, 
+               aes(y = diferenca_log03, 
+                   x = total_leituras,
+                   text = paste0("Nº da leitura: ", total_leituras, 
+                                 "<br>Diferenca de tempo(ms): ", diferenca_log03))) + 
         labs(title = "Gráfico para operação de add com 250000 caracteres e poucos users",  
-             y = "Intervalo de tempo - add 250000 chars(ms)", 
+             y = "Intervalo de tempo - operação add(ms)", 
              x = "Nº da leitura")
-ggplotly(g_add_250k)
+
+ggplotly(g_log03, tooltip = "text")
 
 ```
+
+## Gráfico(log04) para operação de del com poucos usuários e um arquivo de 250000 caracteres.
+
+```{r, echo=FALSE, fig.height=3, fig.width=5}
+
+diferenca_log04 = log04_dif$diferenca_tempo_n4
+
+g_log04 = ggplot() +
+        geom_point(data = log04_dif, 
+               aes(y = diferenca_log04, 
+                   x = total_leituras,
+                   text = paste0("Nº da leitura: ", total_leituras, 
+                                 "<br>Diferenca de tempo(ms): ", diferenca_log04))) + 
+        labs(title = "Gráfico para operação de del com 250000 caracteres e poucos users",  
+             y = "Intervalo de tempo - operação del(ms)", 
+             x = "Nº da leitura")
+
+ggplotly(g_log04, tooltip = "text")
+
+```
+
+## Gráfico(log05) para operação de add com muitos usuários e um arquivo de 100 caracteres.
+
+```{r, echo=FALSE, fig.height=3, fig.width=5}
+
+diferenca_log05 = log05_dif$diferenca_tempo_n5
+
+g_log05 = ggplot() +
+        geom_point(data = log05_dif, 
+               aes(y = diferenca_log05, 
+                   x = total_leituras,
+                   text = paste0("Nº da leitura: ", total_leituras, 
+                                 "<br>Diferenca de tempo(ms): ", diferenca_log05))) + 
+        labs(title = "Gráfico para operação de add com 100 caracteres e muitos users",  
+             y = "Intervalo de tempo - operação add(ms)", 
+             x = "Nº da leitura")
+
+ggplotly(g_log05, tooltip = "text")
+
+```
+
+## Gráfico(log06) para operação de del com muitos usuários e um arquivo de 100 caracteres.
+
+```{r, echo=FALSE, fig.height=3, fig.width=5}
+
+diferenca_log06 = log06_dif$diferenca_tempo_n6
+
+g_log06 = ggplot() +
+        geom_point(data = log06_dif, 
+               aes(y = diferenca_log06, 
+                   x = total_leituras,
+                   text = paste0("Nº da leitura: ", total_leituras, 
+                                 "<br>Diferenca de tempo(ms): ", diferenca_log06))) + 
+        labs(title = "Gráfico para operação de del com 100 caracteres e muitos users",  
+             y = "Intervalo de tempo - operação del(ms)", 
+             x = "Nº da leitura")
+
+ggplotly(g_log06, tooltip = "text")
+
+```
+
+## Gráfico(log07) para operação de add com muitos usuários e um arquivo de 250000 caracteres.
+
+```{r, echo=FALSE, fig.height=3, fig.width=5}
+
+diferenca_log07 = log07_dif$diferenca_tempo_n7
+
+g_log07 = ggplot() +
+        geom_point(data = log07_dif, 
+               aes(y = diferenca_log07, 
+                   x = total_leituras,
+                   text = paste0("Nº da leitura: ", total_leituras, 
+                                 "<br>Diferenca de tempo(ms): ", diferenca_log07))) + 
+        labs(title = "Gráfico para operação de add com 250000 caracteres e muitos usuários",  
+             y = "Intervalo de tempo - operação add(ms)", 
+             x = "Nº da leitura")
+
+ggplotly(g_log07, tooltip = "text")
+
+```
+
+## Gráfico(log08) para operação de del com muitos usuários e um arquivo de 250000 caracteres.
+
+```{r, echo=FALSE, fig.width = 10}
+
+diferenca_log08 = log08_dif$diferenca_tempo_n8
+
+g_log08 = ggplot() +
+        geom_point(data = log08_dif, 
+               aes(y = diferenca_log08, 
+                   x = total_leituras,
+                   text = paste0("Nº da leitura: ", total_leituras, 
+                                 "<br>Diferenca de tempo(ms): ", diferenca_log08))) + 
+        labs(title = "Gráfico para operação de del com 250000 caracteres e muitos users",  
+             y = "Intervalo de tempo - operação del(ms)", 
+             x = "Nº da leitura")
+
+ggplotly(g_log08, tooltip = "text")
+
+```
+
 
 #Análise para operação de add com 100 chars:
 Notamos que, no gráfico de add com 100 chars, existem indícios de alguns outliers, como na leitura 41 (cujo valor é 1131 milissegundos), pois ela se distanciou muito das demais em termos de diferença em milissegundos. Vamos fazer uma visualização de um box-plot para essa medição de modo a constarmos se, de fato, existem outliers.
 
 ```{r, echo=FALSE}
-boxplot(time_100_add_dif, ylab = "Intervalo de tempo - add 250000 chars(ms)")
+boxplot(log01_dif, ylab = "Intervalo de tempo - add 250000 chars(ms)")
 ```
 
 ##Conclusão
@@ -110,17 +252,17 @@ Nossa asserção sobre a existência de outliers estava correta e foi confirmada
 Notamos que, no gráfico referente à operação de add com 250000 chars, existem indícios de alguns outliers, como na leitura 21(792), pois ela se distanciou de maneira singular com relação às demais em termos de diferença em milissegundos. Vamos fazer uma visualização de um box-plot para essa medição de modo a constarmos se, de fato, existe algum outlier.
 
 ```{r, echo=FALSE}
-boxplot(time_250000_add_dif, ylab = "Intervalo de tempo - add 100 chars(ms)")
+boxplot(log03_dif, ylab = "Intervalo de tempo - add 100 chars(ms)")
 ```
 
 ##Conclusão
 De fato, nossa hipótese sobre a presença de outlier estava correta e foi confirmada pelo boxplot acima. Como a média, a variância e o desvio padrão não são medidas robustas, elas tenderão a sofrer com impacto desse outlier. Dessa forma, a mediana talvez fosse uma medida estatística mais apropriada, já que ela não sofre com a presença deles.
 
-#Medidas estatísticas para operação de add com 100 chars
+#Medidas estatísticas para operação de add com 100 chars e poucos usuários - log01
 Abaixo veremos a média, mediana, e desvio padrão, além do intervalo de confiança(i.c.) com 95% de confiança para os dados dessa operação. Também vamos avaliar o grau de representatividade da média através do coeficiente de variação(cv), que também server para nos indicar a homogeneidade (se os valores estão ao redor da média), a precisão dos dados e a variabilidade com relação à média (quanto o conjunto se afasta da média). Como resultado direto, temos que quanto menor o c.v., maior a homogeneidade e a precisão do conjunto de dados. Além disso, se o valor do cv for menor que 50%, então a média é dita representativa; não, caso contrário.
 
 ```{r, echo=FALSE}
-aux_add = time_100_add_dif$diferenca_tempo_n1
+aux_add = log01_dif$diferenca_tempo_n1
 
 media_add = mean(aux_add)
 median_add = median(aux_add)
@@ -147,11 +289,11 @@ sprintf("Com 95%% de confiança, o intervalo que compreende o verdadeiro valor d
 Apesar do outliers, vemos que nossa média ainda permanece significativa, temos um coeficiente de variação de menos de 50% (aproximadamente 15.71%). Poderíamos classificar esse coeficiente de variação como tendo uma dispersão média e relativamente homogênea, além de uma boa precisão. Em outras palavras, tivemos que apenas 15.71% dos valores se afastam da média(os outros estão ao redor/bem próximos dela). Também temos que o intervalo de confiança foi relativamente extenso, o que limita um pouco nossa capacidade de ter um conhecimento sobre o valor real da média de maneira significativa. Talvez isso se deva ao número de experimentações que foi de apenas 60 para cada operação. Sobre as medidas de dispersão: como era de se esperar, a variância resultou em um valor assustadoramente grande e o desvio padrão foi expressivo. Isso é consequência direta da presença dos outliers.
 
 
-#Medidas estatísticas para operação de add com 250000 chars
+#Medidas estatísticas para operação de add com 250000 chars e poucos usuários - log03
 Abaixo veremos a média, mediana, e desvio padrão, além do intervalo de confiança(i.c.) com 95% de confiança para os dados dessa operação. Também, de modo similar à operação anterior, vamos avaliar o grau de representatividade da média através do coeficiente de variação(cv), bem como a homogeneidade dos dados.
 
 ```{r, echo=FALSE}
-aux_250000_add = time_250000_add_dif$diferenca_tempo_n3
+aux_250000_add = log03_dif$diferenca_tempo_n3
 
 media_250000_add = mean(aux_250000_add)
 median_250000_add = median(aux_250000_add)
