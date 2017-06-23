@@ -4,7 +4,7 @@ author: "Grupo: Jobson Lucas Dias, José Benardi Nunes, Rafael Albuquerque"
 output: html_document
 ---
 #Arquivos aqui avaliados
-Neste arquivo, iremos comparar os dados das medições referentes aos tempos de respostas obtidos para os fatores(operação de add e remover) e níveis escolhidos(100 e 250 000 caracteres; poucos e muitos usuários).
+Neste arquivo, iremos comparar os dados das medições referentes aos tempos de respostas(representados por LogTIME) obtidos para os fatores(operação de add e remover) e níveis escolhidos(100 e 250 000 caracteres; poucos e muitos usuários).
 
 ```{r setup, include=FALSE, echo=FALSE}
 require(ggplot2, quietly = TRUE)
@@ -43,7 +43,7 @@ log08 = read.csv("C:/Users/Lucas/Desktop/resultBatches-adsd/time/many users/Log8
 
 ```{r, echo=FALSE}
 #N é o tamanho da população. Nesse caso 60.
-#Z é o valor correspondente ao nível de confiança da tabela normal Z. Para 95% de confiança, Z = 1.96
+#Z é o valor correspondente ao nível de confiança da tabela normal Z. Para 95% nível de confiança(alfa = 0,05), Z = 1.96
 #p é a proporção que queremos encontrar. Geralmente, quando não se sabe, usa-se 50%, que é o pior caso.
 #e é o erro aceitável. Como a porcentagem de confiança que queremos é de 95%, então o erro será de 5%. 
 tam_amostra = function(N,Z,p,e){
@@ -218,7 +218,7 @@ ggplotly(g_log07, tooltip = "text")
 
 ## Gráfico(log08) para operação de del com muitos usuários e um arquivo de 250000 caracteres.
 
-```{r, echo=FALSE, fig.width = 10}
+```{r, echo=FALSE, fig.height=3, fig.width=5}
 
 diferenca_log08 = log08_dif$diferenca_tempo_n8
 
@@ -236,29 +236,104 @@ ggplotly(g_log08, tooltip = "text")
 
 ```
 
+# Análises
+Para os casos em que notamos outliers, talvez fosse mais apropriado utilizar a mediana como medida estatística ao invés da média, tendo em vista que aquela é uma medida robusta, isto é, não é afetada por outliers, enquanto que está é. Além disso, como o desvio padrão e a variância fazendo uso da média e levam em conta todos outliers, temos que eles também serão bastante afetados pela presença desses valores.
 
-#Análise para operação de add com 100 chars:
-Notamos que, no gráfico de add com 100 chars, existem indícios de alguns outliers, como na leitura 41 (cujo valor é 1131 milissegundos), pois ela se distanciou muito das demais em termos de diferença em milissegundos. Vamos fazer uma visualização de um box-plot para essa medição de modo a constarmos se, de fato, existem outliers.
+##Análise para operação do log1Time:
+Notamos que, no gráfico referente ao log1TIME, existem indícios de alguns outliers, como na leitura 41 (cujo valor é 1131 milissegundos), pois ela se distanciou muito das demais em termos de diferença em milissegundos. Vamos fazer uma visualização de um box-plot para essa medição de modo a constarmos se, de fato, existem outliers.
 
 ```{r, echo=FALSE}
 boxplot(log01_dif, ylab = "Intervalo de tempo - add 250000 chars(ms)")
 ```
 
-##Conclusão
-Nossa asserção sobre a existência de outliers estava correta e foi confirmada pelo boxplot acima. Existem, ao todo, 3 outliers. Como a média, a variância e o desvio padrão não são medidas robustas, elas tenderão a sofrer muito o impacto desses valores. Dessa forma, a mediana talvez fosse uma medida estatística mais apropriada, já que ela não sofre com a presença deles.
+###Conclusão
+Nossa asserção sobre a existência de outliers estava correta e foi confirmada pelo boxplot acima. Existem, ao todo, 3 outliers. 
 
 
-#Análise para operação de add com 250000 chars:
-Notamos que, no gráfico referente à operação de add com 250000 chars, existem indícios de alguns outliers, como na leitura 21(792), pois ela se distanciou de maneira singular com relação às demais em termos de diferença em milissegundos. Vamos fazer uma visualização de um box-plot para essa medição de modo a constarmos se, de fato, existe algum outlier.
+##Análise para operação de log2Time:
+Notamos que, no gráfico referente ao log2TIME, existem indícios de alguns outliers, como na leitura 39, pois ela se distanciou de maneira singular com relação às demais em termos de diferença em milissegundos. Vamos fazer uma visualização de um box-plot para essa medição de modo a constarmos se, de fato, existe algum outlier.
 
 ```{r, echo=FALSE}
-boxplot(log03_dif, ylab = "Intervalo de tempo - add 100 chars(ms)")
+boxplot(log02_dif, ylab = "Intervalo de tempo - deletar 100 chars(ms)")
+```
+
+###Conclusão
+De fato, nossa hipótese sobre a presença de outlier estava correta e foi confirmada pelo boxplot acima, pois é possível notar a existência de 1 outlier. 
+
+
+##Análise para operação log3Time:
+Notamos que, no gráfico referente ao log3TIME, existem indícios de alguns outliers, como na leitura 21(792), pois ela se distanciou de maneira singular com relação às demais em termos de diferença em milissegundos. Vamos fazer uma visualização de um box-plot para essa medição de modo a constarmos se, de fato, existe algum outlier.
+
+```{r, echo=FALSE}
+boxplot(log03_dif, ylab = "Intervalo de tempo - add 250000 chars(ms)")
+```
+
+###Conclusão
+De fato, nossa hipótese sobre a presença de outlier estava correta e foi confirmada pelo boxplot acima, pois notamos a existência de 3 outliers. 
+
+
+##Análise para operação log4Time:
+Não notamos no gráfico referente ao log4TIME quaisquer indícios de algum outliers.Para validarmos nossa hipótese, vamos fazer uma visualização de um box-plot para essa medição de modo a constarmos se, de fato, não existe algum outlier.
+
+```{r, echo=FALSE}
+boxplot(log04_dif, ylab = "Intervalo de tempo - del 250000 chars(ms)")
+```
+
+###Conclusão
+De fato, nossa hipótese sobre ausência de outliers estava correta e foi confirmada pelo boxplot acima. 
+
+
+##Análise para operação log5Time:
+Notamos que, no gráfico referente ao log5TIME, existem indícios de alguns outliers, como na leitura 41(684), pois ela se distanciou de maneira singular com relação às demais em termos de diferença em milissegundos. Vamos fazer uma visualização de um box-plot para essa medição de modo a constarmos se, de fato, existe algum outlier.
+
+```{r, echo=FALSE}
+boxplot(log05_dif, ylab = "Intervalo de tempo - add 100 chars(ms)")
 ```
 
 ##Conclusão
-De fato, nossa hipótese sobre a presença de outlier estava correta e foi confirmada pelo boxplot acima. Como a média, a variância e o desvio padrão não são medidas robustas, elas tenderão a sofrer com impacto desse outlier. Dessa forma, a mediana talvez fosse uma medida estatística mais apropriada, já que ela não sofre com a presença deles.
+De fato, nossa hipótese sobre a presença de outlier estava correta e foi confirmada pelo boxplot acima.Podemos ver no boxplot acima a existência de 3 outliers. 
 
-#Medidas estatísticas para operação de add com 100 chars e poucos usuários - log01
+
+##Análise para operação log6Time:
+Aqui também não notamos no gráfico referente ao log6TIME quaisquer indícios de existência de outliers. Para validarmos nossa hipótese, vamos fazer uma visualização de um box-plot para essa medição de modo a constarmos se, de fato, não existe algum outlier.
+
+```{r, echo=FALSE}
+boxplot(log06_dif, ylab = "Intervalo de tempo - del 100 chars(ms)")
+```
+
+##Conclusão
+De fato, nossa hipótese sobre inexistência de outliers para essa medição estava correta e foi confirmada pelo boxplot acima.  
+
+
+##Análise para operação log7Time:
+Notamos que, no gráfico referente ao log7TIME, existem indícios de alguns outliers, como na leitura 41(700), pois ela se distanciou de maneira singular com relação às demais em termos de diferença em milissegundos. Vamos fazer uma visualização de um box-plot para essa medição de modo a constarmos se, de fato, existe algum outlier.
+
+```{r, echo=FALSE}
+boxplot(log07_dif, ylab = "Intervalo de tempo - add 250000 chars(ms)")
+```
+
+##Conclusão
+De fato, nossa hipótese sobre a presença de outlier estava correta e foi confirmada pelo boxplot acima. Foram identificados 4 outliers.
+
+
+##Análise para operação log8Time:
+Outra vez não notamos no gráfico referente ao log8TIME quaisquer indícios de existência de outliers. Para validarmos nossa hipótese, vamos fazer uma visualização de um box-plot para essa medição de modo a constarmos se, de fato, não existe algum outlier.
+
+```{r, echo=FALSE}
+boxplot(log08_dif, ylab = "Intervalo de tempo - del 250000 chars(ms)")
+```
+
+##Conclusão
+Podemos concluir que nossa hipótese sobre inexistência de outliers para essa medição estava correta e foi confirmada pelo boxplot acima.  
+
+
+
+
+
+
+#Tratamento estatístico
+
+##Medidas estatísticas para log01Time
 Abaixo veremos a média, mediana, e desvio padrão, além do intervalo de confiança(i.c.) com 95% de confiança para os dados dessa operação. Também vamos avaliar o grau de representatividade da média através do coeficiente de variação(cv), que também server para nos indicar a homogeneidade (se os valores estão ao redor da média), a precisão dos dados e a variabilidade com relação à média (quanto o conjunto se afasta da média). Como resultado direto, temos que quanto menor o c.v., maior a homogeneidade e a precisão do conjunto de dados. Além disso, se o valor do cv for menor que 50%, então a média é dita representativa; não, caso contrário.
 
 ```{r, echo=FALSE}
@@ -289,7 +364,7 @@ sprintf("Com 95%% de confiança, o intervalo que compreende o verdadeiro valor d
 Apesar do outliers, vemos que nossa média ainda permanece significativa, temos um coeficiente de variação de menos de 50% (aproximadamente 15.71%). Poderíamos classificar esse coeficiente de variação como tendo uma dispersão média e relativamente homogênea, além de uma boa precisão. Em outras palavras, tivemos que apenas 15.71% dos valores se afastam da média(os outros estão ao redor/bem próximos dela). Também temos que o intervalo de confiança foi relativamente extenso, o que limita um pouco nossa capacidade de ter um conhecimento sobre o valor real da média de maneira significativa. Talvez isso se deva ao número de experimentações que foi de apenas 60 para cada operação. Sobre as medidas de dispersão: como era de se esperar, a variância resultou em um valor assustadoramente grande e o desvio padrão foi expressivo. Isso é consequência direta da presença dos outliers.
 
 
-#Medidas estatísticas para operação de add com 250000 chars e poucos usuários - log03
+##Medidas estatísticas para log03Time
 Abaixo veremos a média, mediana, e desvio padrão, além do intervalo de confiança(i.c.) com 95% de confiança para os dados dessa operação. Também, de modo similar à operação anterior, vamos avaliar o grau de representatividade da média através do coeficiente de variação(cv), bem como a homogeneidade dos dados.
 
 ```{r, echo=FALSE}
