@@ -332,9 +332,9 @@ Podemos concluir que nossa hipótese sobre inexistência de outliers para essa m
 
 
 #Tratamento estatístico
+Abaixo veremos a média, mediana, e desvio padrão, além do intervalo de confiança(i.c.) com 95% de confiança(alfa = 0,05) para os dados das medições realizadas. Também vamos avaliar o grau de representatividade da média através do coeficiente de variação(cv), que também server para nos indicar a homogeneidade (se os valores estão ao redor da média), a precisão dos dados e a variabilidade com relação à média (quanto o conjunto se afasta da média). Como resultado direto, temos que quanto menor o c.v., maior a homogeneidade e a precisão do conjunto de dados. Além disso, se o valor do cv for menor que 50%, então a média é dita representativa; não, caso contrário.
 
 ##Medidas estatísticas para log01Time
-Abaixo veremos a média, mediana, e desvio padrão, além do intervalo de confiança(i.c.) com 95% de confiança para os dados dessa operação. Também vamos avaliar o grau de representatividade da média através do coeficiente de variação(cv), que também server para nos indicar a homogeneidade (se os valores estão ao redor da média), a precisão dos dados e a variabilidade com relação à média (quanto o conjunto se afasta da média). Como resultado direto, temos que quanto menor o c.v., maior a homogeneidade e a precisão do conjunto de dados. Além disso, se o valor do cv for menor que 50%, então a média é dita representativa; não, caso contrário.
 
 ```{r, echo=FALSE}
 aux_add = log01_dif$diferenca_tempo_n1
@@ -352,20 +352,48 @@ ic_media_add = media_add + c(-margemDeErro_add, margemDeErro_add)
 ```
 
 ```{r, echo=FALSE}
-sprintf("o valor da média para as distâncias da operação add é: %f",media_add)
-sprintf("o valor da mediana para as distâncias da operação add é: %f",median_add)
-sprintf("o valor da variância para as distâncias da operação add é: %f", variancia_add)
-sprintf("o valor do desvio padrão para as distâncias da operação add é: %f", dp_add)
-sprintf("o valor do coeficiente de variação para as distâncias da operação add é: %f%%", cv_add)
-sprintf("Com 95%% de confiança, o intervalo que compreende o verdadeiro valor da média para operação de add com poucos usuários e 100 caracteres está entre %f e %f.", ic_media_add[1], ic_media_add[2])
+sprintf("o valor da média para as distâncias para o log01TIME é: %f",media_add)
+sprintf("o valor da mediana para as distâncias para o log01TIME é: %f",median_add)
+sprintf("o valor da variância para as distâncias para o log01TIME é: %f", variancia_add)
+sprintf("o valor do desvio padrão para as distâncias para o log01TIME é: %f", dp_add)
+sprintf("o valor do coeficiente de variação para as distâncias para o log01TIME é: %f%%", cv_add)
+sprintf("Com 95%% de confiança, o intervalo que compreende o verdadeiro valor da média está entre %f e %f.", ic_media_add[1], ic_media_add[2])
 ```
 
 ##Interpretação: 
 Apesar do outliers, vemos que nossa média ainda permanece significativa, temos um coeficiente de variação de menos de 50% (aproximadamente 15.71%). Poderíamos classificar esse coeficiente de variação como tendo uma dispersão média e relativamente homogênea, além de uma boa precisão. Em outras palavras, tivemos que apenas 15.71% dos valores se afastam da média(os outros estão ao redor/bem próximos dela). Também temos que o intervalo de confiança foi relativamente extenso, o que limita um pouco nossa capacidade de ter um conhecimento sobre o valor real da média de maneira significativa. Talvez isso se deva ao número de experimentações que foi de apenas 60 para cada operação. Sobre as medidas de dispersão: como era de se esperar, a variância resultou em um valor assustadoramente grande e o desvio padrão foi expressivo. Isso é consequência direta da presença dos outliers.
 
+#Medidas estatísticas para log02Time
+
+```{r, echo=FALSE}
+aux_del = log02_dif$diferenca_tempo_n2
+
+media_del = mean(aux_del)
+median_del = median(aux_del)
+variancia_del = var(aux_del)
+dp_del = sd(aux_del)
+cv_del = (dp_del/media_del)*100
+
+standError_media_del = dp_del/sqrt(tam_pop) 
+margemDeErro_del = qnorm(.975)*standError_media_del
+
+ic_media_del = media_del + c(-margemDeErro_del, margemDeErro_del)
+```
+
+```{r, echo=FALSE}
+sprintf("o valor da média para as distâncias log02Time é: %f", media_del)
+sprintf("o valor da mediana para as distâncias log02Time é: %f", median_del)
+sprintf("o valor da variância para as distâncias log02Time é: %f", variancia_del)
+sprintf("o valor do desvio padrão para as distâncias log02Time é: %f", dp_del)
+sprintf("o valor do coeficiente de variação para as distâncias log02Time é: %f%%", cv_del)
+sprintf("Com 95%% de confiança, o intervalo que compreende o verdadeiro valor da média está entre %f e %f.", ic_media_del[1], ic_media_del[2])
+```
+
+##Interpretação:
+Surpreendentemente, vemos que nosso cv para média do log02TIME(apenas 2.2%) foi ainda menor, o que indica, por exemplo, que a homogeneidade dos resultados aqui é maior do que a obtida, por exemplo, no log01TIME e que a variabilidade com relação à média foi baixíssima(a esmagadora maioria dos valores estão ao redor da média). Como resultado, temos que nossos dados possuem baixa dipersão, ótima precisão e alta homogeneidade. Também temos que a média é significativa. Obtivemos um intervalo de confiança aqui, digamos, mais significativo, pelo fato dele ser muito menos extenso que para operação de add vista anteriormente. Também obtivemos que nossa variância não ficou tão grande se compararmos com a variância obtida para o log01TIME. O mesmo comentário poderia ser feito sobre o desvio padrão.
+
 
 ##Medidas estatísticas para log03Time
-Abaixo veremos a média, mediana, e desvio padrão, além do intervalo de confiança(i.c.) com 95% de confiança para os dados dessa operação. Também, de modo similar à operação anterior, vamos avaliar o grau de representatividade da média através do coeficiente de variação(cv), bem como a homogeneidade dos dados.
 
 ```{r, echo=FALSE}
 aux_250000_add = log03_dif$diferenca_tempo_n3
@@ -383,13 +411,162 @@ ic_media_250000_add = media_250000_add + c(-margemDeErro_250000_add, margemDeErr
 ```
 
 ```{r, echo=FALSE}
-sprintf("o valor da média para as distâncias da operação add com 250000 chars é: %f", media_250000_add)
-sprintf("o valor da mediana para as distâncias da operação add com 250000 chars é: %f", median_250000_add)
-sprintf("o valor da variância para as distâncias da operação add com 250000 chars é: %f", variancia_250000_add)
-sprintf("o valor do desvio padrão para as distâncias da operação add com 250000 chars é: %f", dp_250000_add)
-sprintf("o valor do coeficiente de variação para as distâncias da operação add com 250000 chars é: %f%%", cv_250000_add)
-sprintf("Com 95%% de confiança, o intervalo que compreende o verdadeiro valor da média para operação de add com 250000 chars com poucos usuários e 100 caracteres está entre %f e %f.", ic_media_250000_add[1], ic_media_250000_add[2])
+sprintf("o valor da média para as distâncias log03Time é: %f", media_250000_add)
+sprintf("o valor da mediana para as distâncias log03Time é: %f", median_250000_add)
+sprintf("o valor da variância para as distâncias log03Time é: %f", variancia_250000_add)
+sprintf("o valor do desvio padrão para as distâncias log03Time é: %f", dp_250000_add)
+sprintf("o valor do coeficiente de variação para as distâncias log03Time é: %f%%", cv_250000_add)
+sprintf("Com 95%% de confiança, o intervalo que compreende o verdadeiro valor da média está entre %f e %f.", ic_media_250000_add[1], ic_media_250000_add[2])
 ```
 
 ##Interpretação:
-Surpreendentemente, vemos que nosso cv para média da operação add com 250000 chars foi ainda menor(apenas 8.42%), o que indica, por exemplo, que a homogeneidade dos resultados aqui é maior que para operação de add com 100 chars e que a variabilidade com relação à média foi baixa(a imensa maioria dos valores estão ao redor da média). Como resultado, temos que nossos dados possuem baixa dipersão, ótima precisão e alta homogeneidade. Também temos que a média é significativa(8.42% < 50%). Obtivemos um intervalo de confiança aqui, digamos, mais significativo, pelo fato dele ser menos extenso que para operação de add com 100 chars vista anteriormente. Também obtivemos que, com a existência de outliers, nossa variância ficou com um valor grande, embora menor que o valor obtido anteriormente. O mesmo comentário poderia ser feito sobre o desvio padrão.
+Surpreendentemente, vemos que nosso cv para média do log03TIME(apenas 8.42%) foi também menor que o do log01, o que indica, por exemplo, que a homogeneidade dos resultados aqui é maior que para operação de add com 100 chars e que a variabilidade com relação à média foi baixa(a imensa maioria dos valores estão ao redor da média). Como resultado, temos que nossos dados possuem baixa dipersão, ótima precisão e alta homogeneidade. Também temos que a média é significativa(8.42% < 50%). Obtivemos um intervalo de confiança aqui, digamos, mais significativo, pelo fato dele ser menos extenso que o obtido para o log01TIME, vistO anteriormente. Também em relação ao log01TIME obtivemos a variância com um valor grande, devido à existência de outliers, embora com um valor menor. O mesmo comentário poderia ser feito sobre o desvio padrão.
+
+#Medidas estatísticas para log04Time
+
+```{r, echo=FALSE}
+aux_del = log04_dif$diferenca_tempo_n4
+
+media_del = mean(aux_del)
+median_del = median(aux_del)
+variancia_del = var(aux_del)
+dp_del = sd(aux_del)
+cv_del = (dp_del/media_del)*100
+
+standError_media_del = dp_del/sqrt(tam_pop) 
+margemDeErro_del = qnorm(.975)*standError_media_del
+
+ic_media_del = media_del + c(-margemDeErro_del, margemDeErro_del)
+```
+
+```{r, echo=FALSE}
+sprintf("o valor da média para as distâncias log04Time é: %f", media_del)
+sprintf("o valor da mediana para as distâncias log04Time é: %f", median_del)
+sprintf("o valor da variância para as distâncias log04Time é: %f", variancia_del)
+sprintf("o valor do desvio padrão para as distâncias log04Time é: %f", dp_del)
+sprintf("o valor do coeficiente de variação para as distâncias log04Time é: %f%%", cv_del)
+sprintf("Com 95%% de confiança, o intervalo que compreende o verdadeiro valor da média está entre %f e %f.", ic_media_del[1], ic_media_del[2])
+```
+
+##Interpretação:
+Surpreendentemente, vemos que nosso cv para média do log04TIME(apenas ~2.3%) foi 0.1 décimos maior, o que indica, por exemplo, que a homogeneidade dos resultados aqui é relativamente menor do que a obtida, por exemplo, no log02TIME e que a variabilidade com relação à média foi baixíssima(a esmagadora maioria dos valores estão ao redor da média). Como resultado, temos que nossos dados possuem baixa dipersão, ótima precisão e alta homogeneidade. Também temos que a média é significativa. Com relação ao intervalo de confiança, obtivemos um resultado aqui, digamos, menos significativo, pelo fato dele ser um pouco mais extenso do que o obtido no log02TIME. Já a variância foi maior se compararmos com a variância obtida para o log02TIME. O mesmo comentário poderia ser feito sobre o desvio padrão. Os resultados opostos poderiam ser apontados se comparássemos com o log03TIME: o CV para o log04TIME é menor, indicando mais homogeneidade e precisão; também temos um intervalo de confiança menos extenso (portanto, mais significativo); medidas de dispersão (variância e desvio padrão) também menores. 
+
+##Medidas estatísticas para log05Time
+
+```{r, echo=FALSE}
+aux_add = log05_dif$diferenca_tempo_n5
+
+media_add = mean(aux_add)
+median_add = median(aux_add)
+variancia_add = var(aux_add)
+dp_add = sd(aux_add)
+cv_add = (dp_add/media_add)*100
+
+standError_media_add = dp_add/sqrt(tam_pop) 
+margemDeErro_add = qnorm(.975)*standError_media_add
+
+ic_media_add = media_add + c(-margemDeErro_add, margemDeErro_add)
+```
+
+```{r, echo=FALSE}
+sprintf("o valor da média para as distâncias para o log05TIME é: %f",media_add)
+sprintf("o valor da mediana para as distâncias para o log05TIME é: %f",median_add)
+sprintf("o valor da variância para as distâncias para o log05TIME é: %f", variancia_add)
+sprintf("o valor do desvio padrão para as distâncias para o log05TIME é: %f", dp_add)
+sprintf("o valor do coeficiente de variação para as distâncias para o log05TIME é: %f%%", cv_add)
+sprintf("Com 95%% de confiança, o intervalo que compreende o verdadeiro valor da média está entre %f e %f.", ic_media_add[1], ic_media_add[2])
+```
+
+##Interpretação:
+Vemos que nosso cv para média do log05TIME(apenas 6.72%) foi menor que o obtido, por exemplo, no log01TIME, o que indica que a homogeneidade dos resultados aqui é maior e que a variabilidade com relação à média foi menor, sendo também considerada baixa(a maioria dos valores estão ao redor da média). Como resultado, temos que nossos dados possuem baixa dipersão, boa precisão e alta homogeneidade. Também temos que a média é significativa. Obtivemos um intervalo de confiança aqui, digamos, mais significativo, pelo fato dele ser menos extenso que o do log01TIME. Também obtivemos que, apesar da existência de outliers, nossa variância não ficou tão grande se compararmos com a variância obtida para o log01TIME. O mesmo comentário poderia ser feito sobre o desvio padrão.
+
+#Medidas estatísticas para log06Time
+
+```{r, echo=FALSE}
+aux_del = log06_dif$diferenca_tempo_n6
+
+media_del = mean(aux_del)
+median_del = median(aux_del)
+variancia_del = var(aux_del)
+dp_del = sd(aux_del)
+cv_del = (dp_del/media_del)*100
+
+standError_media_del = dp_del/sqrt(tam_pop) 
+margemDeErro_del = qnorm(.975)*standError_media_del
+
+ic_media_del = media_del + c(-margemDeErro_del, margemDeErro_del)
+```
+
+```{r, echo=FALSE}
+sprintf("o valor da média para as distâncias log06Time é: %f", media_del)
+sprintf("o valor da mediana para as distâncias log06Time é: %f", median_del)
+sprintf("o valor da variância para as distâncias log06Time é: %f", variancia_del)
+sprintf("o valor do desvio padrão para as distâncias log06Time é: %f", dp_del)
+sprintf("o valor do coeficiente de variação para as distâncias log06Time é: %f%%", cv_del)
+sprintf("Com 95%% de confiança, o intervalo que compreende o verdadeiro valor da média está entre %f e %f.", ic_media_del[1], ic_media_del[2])
+```
+
+##Interpretação:
+Surpreendentemente, vemos que nosso cv para média do log06TIME(apenas ~2.0%) foi o menor cv obtido até agora, o que indica, por exemplo, que a homogeneidade dos resultados aqui é maior do que a obtida, por exemplo, no log02TIME(cv ~2.2%) e que a variabilidade com relação à média foi baixíssima(a esmagadora maioria dos valores estão ao redor da média). Como resultado, temos que nossos dados possuem baixa dipersão, ótima precisão e alta homogeneidade. Também temos que a média é significativa. Obtivemos um intervalo de confiança aqui, digamos, mais significativo, pelo fato dele ser menos extenso que o obtido para o log02TIME. Também obtivemos que nossa variância ficou menor, bem como o desvio padrão.
+Os resultados aqui obtidos são ainda melhores se comparássemos com o log05TIME: o CV para o log06TIME é menor, indicando mais homogeneidade e precisão; também temos um intervalo de confiança bastante menor(portanto, mais significativo); medidas de dispersão (variância e desvio padrão) bem menores. 
+
+##Medidas estatísticas para log07Time
+
+```{r, echo=FALSE}
+aux_add = log07_dif$diferenca_tempo_n7
+
+media_add = mean(aux_add)
+median_add = median(aux_add)
+variancia_add = var(aux_add)
+dp_add = sd(aux_add)
+cv_add = (dp_add/media_add)*100
+
+standError_media_add = dp_add/sqrt(tam_pop) 
+margemDeErro_add = qnorm(.975)*standError_media_add
+
+ic_media_add = media_add + c(-margemDeErro_add, margemDeErro_add)
+```
+
+```{r, echo=FALSE}
+sprintf("o valor da média para as distâncias para o log07TIME é: %f",media_add)
+sprintf("o valor da mediana para as distâncias para o log07TIME é: %f",median_add)
+sprintf("o valor da variância para as distâncias para o log07TIME é: %f", variancia_add)
+sprintf("o valor do desvio padrão para as distâncias para o log07TIME é: %f", dp_add)
+sprintf("o valor do coeficiente de variação para as distâncias para o log07TIME é: %f%%", cv_add)
+sprintf("Com 95%% de confiança, o intervalo que compreende o verdadeiro valor da média está entre %f e %f.", ic_media_add[1], ic_media_add[2])
+```
+
+##Interpretação:
+Vemos que nosso cv para média do log07TIME(apenas 6.76%) foi menor que o obtido, por exemplo, no log03TIME, o que indica que a homogeneidade dos resultados aqui é maior e que a variabilidade com relação à média foi menor, sendo também considerada baixa(a maioria dos valores estão ao redor da média). Como resultado, temos que nossos dados possuem baixa dipersão, boa precisão e alta homogeneidade. Também temos que a média é significativa. Obtivemos um intervalo de confiança aqui, digamos, mais significativo, pelo fato dele ser menos extenso que o do log03TIME. Também obtivemos variância e desvio padrão menores. 
+Os resultados opostos poderiam ser apontados se comparássemos com o log05TIME: o CV para o log07TIME é maior, indicando menos homogeneidade e precisão; também temos um intervalo de confiança um pouco mais extenso (portanto, menos significativo); medidas de dispersão (variância e desvio padrão) também maiores. 
+
+#Medidas estatísticas para log08Time
+
+```{r, echo=FALSE}
+aux_del = log08_dif$diferenca_tempo_n8
+
+media_del = mean(aux_del)
+median_del = median(aux_del)
+variancia_del = var(aux_del)
+dp_del = sd(aux_del)
+cv_del = (dp_del/media_del)*100
+
+standError_media_del = dp_del/sqrt(tam_pop) 
+margemDeErro_del = qnorm(.975)*standError_media_del
+
+ic_media_del = media_del + c(-margemDeErro_del, margemDeErro_del)
+```
+
+```{r, echo=FALSE}
+sprintf("o valor da média para as distâncias log08Time é: %f", media_del)
+sprintf("o valor da mediana para as distâncias log08Time é: %f", median_del)
+sprintf("o valor da variância para as distâncias log08Time é: %f", variancia_del)
+sprintf("o valor do desvio padrão para as distâncias log08Time é: %f", dp_del)
+sprintf("o valor do coeficiente de variação para as distâncias log08Time é: %f%%", cv_del)
+sprintf("Com 95%% de confiança, o intervalo que compreende o verdadeiro valor da média está entre %f e %f.", ic_media_del[1], ic_media_del[2])
+```
+
+##Interpretação:
+
+Nosso cv para média do log08TIME(apenas ~2.1%) foi menor que os obtidos para log07TIME E log04TIME, o que indica, por exemplo, que a homogeneidade dos resultados aqui é maior e que a variabilidade com relação à média foi baixíssima(a esmagadora maioria dos valores estão ao redor da média). Como resultado, temos que nossos dados possuem baixa dipersão, ótima precisão e alta homogeneidade. Também temos que a média é significativa. Obtivemos um intervalo de confiança aqui, digamos, mais significativo, pelo fato dele ser menos extenso que o obtido para o log07TIME e log04TIME. Também obtivemos que nossa variância ficou menor, bem como o desvio padrão.
+Os resultados aqui obtidos são inferiores um pouco se comparássemos com o log06TIME: o CV para o log06TIME é menor, indicando mais homogeneidade e precisão; também temos um intervalo de confiança ligeiramente menor(portanto, ligeiramente mais significativo); medidas de dispersão (variância e desvio padrão) um pouco menores. 
