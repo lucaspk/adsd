@@ -1,0 +1,592 @@
+---
+title: "Medições referentes a métrica de mémoria."
+author: 'Grupo: Jobson Lucas Dias, José Benardi Nunes, Rafael Albuquerque'
+date: "June 21, 2017"
+output: html_document
+---
+
+#Arquivos aqui avaliados Neste arquivo, iremos comparar os dados das medições referentes a memoria livre obtidos para os fatores(operação de add e remover) e níveis escolhidos(100 e 250 000 caracteres; poucos e muitos usuários).
+
+```{r setup, include=FALSE}
+require(ggplot2, quietly = TRUE)
+require(GGally, quietly = TRUE)
+require(curl, quietly = TRUE)
+require(devtools, quietly = TRUE)
+require(reshape2, quietly = TRUE)
+require(dplyr, quietly = TRUE)
+require(plotly, quietly = TRUE)
+require(tibble, quietly = TRUE)
+require(ggdendro, quietly = TRUE)
+
+library(knitr, quietly = TRUE)
+library(cluster)
+library(plyr)
+library(scales)
+library(graphics)
+library(devtools)
+library(ggdendro)
+library(plotly)
+library(tidyr)
+library(ggplot2)
+library(ggfortify, quietly = TRUE)
+```
+
+
+```{r}
+#lendo os arquivos referentes ao tempo de resposta.
+
+#few users
+log01 = read.table("/home/rafalbas/Documents/adsd/memoria/Log1MEMORY.txt", sep=",", col.names=c("leitur_ini", "leitur_final", "diferenca_mem_n1"))
+log02 = read.table("/home/rafalbas/Documents/adsd/memoria/Log2MEMORY.txt", sep=",", col.names=c("leitur_ini", "leitur_final", "diferenca_mem_n2"))
+log03 = read.table("/home/rafalbas/Documents/adsd/memoria/Log3MEMORY.txt", sep=",", col.names=c("leitur_ini", "leitur_final", "diferenca_mem_n3"))
+log04 = read.table("/home/rafalbas/Documents/adsd/memoria/Log4MEMORY.txt", sep=",", col.names=c("leitur_ini", "leitur_final", "diferenca_mem_n4"))
+
+#many users
+log05 = read.table("/home/rafalbas/Documents/adsd/memoria/Log5MEMORY.txt", sep=",", col.names=c("leitur_ini", "leitur_final", "diferenca_mem_n5"))
+log06 = read.table("/home/rafalbas/Documents/adsd/memoria/Log6MEMORY.txt", sep=",", col.names=c("leitur_ini", "leitur_final", "diferenca_mem_n6"))
+log07 = read.table("/home/rafalbas/Documents/adsd/memoria/Log7MEMORY.txt", sep=",", col.names=c("leitur_ini", "leitur_final", "diferenca_mem_n7"))
+log08 = read.table("/home/rafalbas/Documents/adsd/memoria/Log8MEMORY.txt", sep=",", col.names=c("leitur_ini", "leitur_final", "diferenca_mem_n8"))
+```
+
+```{r}
+#N é o tamanho da população. Nesse caso 60.
+#Z é o valor correspondente ao nível de confiança da tabela normal Z. Para 95% de confiança, Z = 1.96
+#p é a proporção que queremos encontrar. Geralmente, quando não se sabe, usa-se 50%, que é o pior caso.
+#e é o erro aceitável. Como a porcentagem de confiança que queremos é de 95%, então o erro será de 5%. 
+tam_amostra = function(N,Z,p,e){
+  numerador = (N*(Z*Z)*p*(1-p))
+  divisor = (N-1)*(e*e)+Z*Z*p*(1-p)
+  return (numerador/divisor)
+}
+tam_pop = 60
+Z = 1.96
+p = 0.5
+e = 0.05
+tam_amost_95_conf = tam_amostra(tam_pop,Z,p,e)
+```
+
+A estratégia utilizada:
+
+A api Java utilizada retorna a diferença em bytes. Contudo, utilizaremos a unidade MB(megabytes) do S.I para diminuirmos nossa escala. Além disso, irá ser utilizado o módulo da diferença entre mémoria inicial e final para identificarmos a memória livre.
+
+```{r}
+log01_dif = abs(log01 %>% select(diferenca_mem_n1))/1000000
+log02_dif = abs(log02 %>% select(diferenca_mem_n2))/1000000
+log03_dif = abs(log03 %>% select(diferenca_mem_n3))/1000000
+log04_dif = abs(log04 %>% select(diferenca_mem_n4))/1000000
+log05_dif = abs(log05 %>% select(diferenca_mem_n5))/1000000
+log06_dif = abs(log06 %>% select(diferenca_mem_n6))/1000000
+log07_dif = abs(log07 %>% select(diferenca_mem_n7))/1000000
+log08_dif = abs(log08 %>% select(diferenca_mem_n8))/1000000
+
+total_leituras = 1:60
+```
+
+Gráficos das leituras ao longo do tempo para todos os logs
+
+Gráfico(log01) para operação de add com poucos usuários e um arquivo de 100 caracteres.
+
+```{r}
+diferenca_log01 = log01_dif$diferenca_mem_n1
+
+g_log01 = ggplot() +
+        geom_point(data = log01_dif, 
+               aes(y = diferenca_log01, 
+                   x = total_leituras,
+                   text = paste0("Nº da leitura: ", total_leituras, 
+                                 "<br>Diferenca de memoria : ",diferenca_log01))) + 
+        labs(title = "Gráfico para operação de add com 100 caracteres e poucos users",  
+             y = "Diferenca de memoria - operação add(mb)", 
+             x = "Nº da leitura")
+
+ggplotly(g_log01, tooltip = "text")
+```
+
+Gráfico(log02) para operação de del com poucos usuários e um arquivo de 100 caracteres.
+
+```{r}
+diferenca_log02 = log02_dif$diferenca_mem_n2
+
+g_log02 = ggplot() +
+        geom_point(data = log02_dif, 
+               aes(y = diferenca_log02, 
+                   x = total_leituras,
+                   text = paste0("Nº da leitura: ", total_leituras, 
+                                 "<br>Diferenca de memoria: ", diferenca_log02))) + 
+        labs(title = "Gráfico para operação de del com 100 caracteres e poucos users",  
+             y = "Diferenca de memoria - operação del(mb)", 
+             x = "Nº da leitura")
+
+ggplotly(g_log02, tooltip = "text")
+```
+
+Gráfico(log03) para operação de add com poucos usuários e um arquivo de 250000 caracteres.
+
+```{r}
+
+diferenca_log03 = log03_dif$diferenca_mem_n3
+
+g_log03 = ggplot() +
+        geom_point(data = log03_dif, 
+               aes(y = diferenca_log03, 
+                   x = total_leituras,
+                   text = paste0("Nº da leitura: ", total_leituras, 
+                                 "<br>Diferenca de memoria: ", diferenca_log03))) + 
+        labs(title = "Gráfico para operação de add com 250000 caracteres e poucos users",  
+             y = "Diferenca de memoria - operação add(mb)", 
+             x = "Nº da leitura")
+
+ggplotly(g_log03, tooltip = "text")
+```
+
+Gráfico(log04) para operação de del com poucos usuários e um arquivo de 250000 caracteres.
+
+```{r}
+
+diferenca_log04 = log04_dif$diferenca_mem_n4
+
+g_log04 = ggplot() +
+          geom_point(data = log04_dif, 
+               aes(y = diferenca_log04, 
+                   x = total_leituras,
+                   text = paste0("Nº da leitura: ", total_leituras, 
+                                 "<br>Diferenca de memoria: ", diferenca_log04))) + 
+        labs(title = "Gráfico para operação de del com 250000 caracteres e poucos users",  
+             y = "Diferenca de memoria - operação del(mb)", 
+             x = "Nº da leitura")
+
+ggplotly(g_log04, tooltip = "text")
+```
+
+Gráfico(log05) para operação de add com muitos usuários e um arquivo de 100 caracteres.
+
+```{r}
+
+diferenca_log05 = log05_dif$diferenca_mem_n5
+
+g_log05 = ggplot() +
+        geom_point(data = log05_dif, 
+               aes(y = diferenca_log05, 
+                   x = total_leituras,
+                   text = paste0("Nº da leitura: ", total_leituras, 
+                                 "<br>Diferenca de memoria: ", diferenca_log05))) + 
+        labs(title = "Gráfico para operação de add com 100 caracteres e muitos users",  
+             y = "Diferenca de memoria - operação add(mb)", 
+             x = "Nº da leitura")
+
+ggplotly(g_log05, tooltip = "text")
+```
+
+Gráfico(log06) para operação de del com muitos usuários e um arquivo de 100 caracteres.
+
+```{r}
+
+diferenca_log06 = log06_dif$diferenca_mem_n6
+
+g_log06 = ggplot() +
+        geom_point(data = log06_dif, 
+               aes(y = diferenca_log06, 
+                   x = total_leituras,
+                   text = paste0("Nº da leitura: ", total_leituras, 
+                                 "<br>Diferenca de memoria: ", diferenca_log06))) + 
+        labs(title = "Gráfico para operação de del com 100 caracteres e muitos users",  
+             y = "Diferenca de memoria - operação del(mb)", 
+             x = "Nº da leitura")
+
+ggplotly(g_log06, tooltip = "text")
+```
+
+Gráfico(log07) para operação de add com muitos usuários e um arquivo de 250000 caracteres.
+
+```{r}
+diferenca_log07 = log07_dif$diferenca_mem_n7
+
+g_log07 = ggplot() +
+        geom_point(data = log07_dif, 
+               aes(y = diferenca_log07, 
+                   x = total_leituras,
+                   text = paste0("Nº da leitura: ", total_leituras, 
+                                 "<br>Diferenca de memoria: ", diferenca_log07))) + 
+        labs(title = "Gráfico para operação de add com 250000 caracteres e muitos usuários",  
+             y = "Diferenca de memoria - operação add(mb)", 
+             x = "Nº da leitura")
+
+ggplotly(g_log07, tooltip = "text")
+```
+
+Gráfico(log08) para operação de del com muitos usuários e um arquivo de 250000 caracteres.
+
+```{r}
+
+diferenca_log08 = log08_dif$diferenca_mem_n8
+
+g_log08 = ggplot() +
+        geom_point(data = log08_dif, 
+               aes(y = diferenca_log08, 
+                   x = total_leituras,
+                   text = paste0("Nº da leitura: ", total_leituras, 
+                                 "<br>Diferenca de memoria: ", diferenca_log08))) + 
+        labs(title = "Gráfico para operação de del com 250000 caracteres e muitos users",  
+             y = "Diferenca de memoria - operação del(mb)", 
+             x = "Nº da leitura")
+
+ggplotly(g_log08, tooltip = "text")
+```
+
+# Análises
+Para os casos em que notamos outliers, talvez fosse mais apropriado utilizar a mediana como medida estatística ao invés da média, tendo em vista que aquela é uma medida robusta, isto é, não é afetada por outliers, enquanto que está é. Além disso, como o desvio padrão e a variância fazendo uso da média e levam em conta todos outliers, temos que eles também serão bastante afetados pela presença desses valores.
+
+##Análise para operação do log1MB:
+Notamos que, no gráfico referente ao log1MB, existem indícios de alguns outliers, como na leitura 6 (cujo valor é 24.13), pois ela se distanciou muito das demais em termos de diferença em MB Vamos fazer uma visualização de um box-plot para essa medição de modo a constarmos se, de fato, existem outliers.
+
+```{r, echo=FALSE}
+boxplot(log01_dif, ylab = "Diferenca de memoria - add 250000 chars(mb)")
+```
+
+###Conclusão
+Nossa asserção sobre a existência de outliers estava correta e foi confirmada pelo boxplot acima. Existem, ao todo, 1 outlier. 
+
+
+##Análise para operação de log2MB:
+Notamos que, no gráfico referente ao log2MB, existem indícios de alguns outliers, como na leitura 27, pois ela se distanciou de maneira singular com relação às demais em termos de diferença em MB. Vamos fazer uma visualização de um box-plot para essa medição de modo a constarmos se, de fato, existe algum outlier.
+
+```{r, echo=FALSE}
+boxplot(log02_dif, ylab = "Diferenca de memoria - deletar 100 chars(mb)")
+```
+
+###Conclusão
+De fato, nossa hipótese sobre a presença de outlier estava correta e foi confirmada pelo boxplot acima, pois é possível notar a existência de 3 outliers. 
+
+
+##Análise para operação log3MB:
+Notamos que, no gráfico referente ao log3MB, existem varios indícios de alguns outliers. Vamos fazer uma visualização de um box-plot para essa medição de modo a constarmos se, de fato, existe algum outlier.
+
+```{r, echo=FALSE}
+boxplot(log03_dif, ylab = "Diferenca de memoria - add 250000 chars(mb)")
+```
+
+###Conclusão
+De fato, nossa hipótese sobre a presença de outlier estava correta e foi confirmada pelo boxplot acima, pois notamos a existência de 7 outliers. 
+
+
+##Análise para operação log4MB:
+Novamente notamos o indicio de vários outliers. Para validarmos nossa hipótese, vamos fazer uma visualização de um box-plot para essa medição de modo a constarmos se, de fato, não existe algum outlier.
+
+```{r, echo=FALSE}
+boxplot(log04_dif, ylab = "Diferenca de memoria - del 250000 chars(mb)")
+```
+
+###Conclusão
+De fato, nossa hipótese foi correta e encontramos novamente 7 outliers. 
+
+
+##Análise para operação log5MB:
+Notamos que, no gráfico referente ao log5MB, existem indícios de alguns outliers, como na leitura 20(~33MB) e 29(~32MB), pois elaS se distanciaram de maneira singular com relação às demais em termos de diferença em MB. Vamos fazer uma visualização de um box-plot para essa medição de modo a constarmos se, de fato, existe algum outlier.
+
+```{r, echo=FALSE}
+boxplot(log05_dif, ylab = "Diferenca de memoria - add 100 chars(mb)")
+```
+
+##Conclusão
+De fato, existem no mínimo 2 outliers. Contudo, achamos mais 2, totalizando 4 outliers presentes no gŕafico. 
+
+
+##Análise para operação log6MB:
+Notamos a presenção de um outlier(leitura 6 com 26.6MB) no gráfico referente ao log6MB quaisquer indícios de existência de outliers. Para validarmos nossa hipótese, vamos fazer uma visualização de um box-plot para essa medição de modo a constarmos se, de fato, existe algum outlier.
+
+```{r, echo=FALSE}
+boxplot(log06_dif, ylab = "Diferenca de memoria - del 100 chars(mb)")
+```
+
+##Conclusão
+De fato, nossa hipótese sobre existencia de um outlier estava correta, o que foi confirmado pelo boxplot acima.
+
+##Análise para operação log7MB:
+Notamos que, no gráfico referente ao log7MB, existem indícios de alguns outliers, como na leitura 41(700), pois ela se distanciou de maneira singular com relação às demais em termos de diferença em milissegundos. Vamos fazer uma visualização de um box-plot para essa medição de modo a constarmos se, de fato, existe algum outlier.
+
+```{r, echo=FALSE}
+boxplot(log07_dif, ylab = "Diferenca de memoria - add 250000 chars(mb)")
+```
+
+##Conclusão
+De fato, nossa hipótese sobre a presença de outlier estava correta e foi confirmada pelo boxplot acima. Foram identificados 4 outliers.
+
+
+##Análise para operação log8MB:
+Não notamos no gráfico referente ao log8MB quaisquer indícios de existência de outliers. Para validarmos nossa hipótese, vamos fazer uma visualização de um box-plot para essa medição de modo a constarmos se, de fato, não existe algum outlier.
+
+```{r, echo=FALSE}
+boxplot(log08_dif, ylab = "Diferenca de memoria - del 250000 chars(mb)")
+```
+
+##Conclusão
+Podemos concluir que nossa hipótese sobre inexistência de outliers para essa medição estava correta e foi confirmada pelo boxplot acima.  
+
+```{r, echo=FALSE}
+remove_outliers <- function(x, na.rm = TRUE, ...) {
+  qnt <- quantile(x, probs=c(.25, .75), na.rm = na.rm, ...)
+  H <- 1.5 * IQR(x, na.rm = na.rm)
+  y <- x
+  y[x < (qnt[1] - H)] <- NA
+  y[x > (qnt[2] + H)] <- NA
+  y
+}
+```
+
+
+# Analise geral e conclusões finais
+
+Apesar de existirem poucos outliers, eles contriuem muito para o resultado final do coeficiente de variação calculado. Dificultando assim a analise. Com isso foi utilizado um função para remover os outliers de nossos dados. Mesmo assim a variação das amostras é muito grande. Logo, para todos os casos, a média não é tão representativa. Por isso, a mediana, nesse caso, pode ser uma medida mais precisa do que a média. Essa dispersão pode ser causada por diversos fatores, uma delas é como o java lida com o heap_size, como o java lida com o garbage collection, o uso de memôria cachê, etc.
+
+Porém, ao analisar os gráficos e o anexo I e II no final deste arquivo podemos notar algumas coisas. Podemos notar que para uma operação tanto de adicionar quanto de deletar com poucos caracteres, não irá haver muita diferença na mémoria se a operação for realizar com muitos ou poucos usuários. Contudo, se temos um grande número de caracteres, o fator quantidade de usuários se torna importante, já que os maiores valores são encontrados quando temos um alto número de usuários em conjunto com um alto número de caracteres. Por último, mas não menos importante, percebemos que a operação de del aloca mais memória que a operação de add.
+
+# Anexo
+Abaixo veremos a média, mediana, e desvio padrão, além do intervalo de confiança(i.c.) com 95% de confiança(alfa = 0,05) para os dados das medições realizadas. Também vamos avaliar o grau de representatividade da média através do coeficiente de variação(cv), que também serve para nos indicar a homogeneidade (se os valores estão ao redor da média), a precisão dos dados e a variabilidade com relação à média (quanto o conjunto se afasta da média). Como resultado direto, temos que quanto menor o c.v., maior a homogeneidade e a precisão do conjunto de dados. Além disso, se o valor do cv for menor que 50%, então a média é dita representativa; não, caso contrário.
+
+##Medidas estatísticas para log01MB
+
+```{r, echo=FALSE}
+aux_add = remove_outliers(log01_dif$diferenca_mem_n1)
+
+media_add = mean(aux_add, na.rm=TRUE)
+median_log1 = median(aux_add, na.rm=TRUE)
+variancia_add = var(aux_add, na.rm=TRUE)
+dp_add = sd(aux_add, na.rm=TRUE)
+cv_add = (dp_add/media_add)*100
+
+standError_media_add = dp_add/sqrt(tam_pop) 
+margemDeErro_add = qnorm(.975)*standError_media_add
+
+ic_media_add = media_add + c(-margemDeErro_add, margemDeErro_add)
+```
+
+```{r, echo=FALSE}
+sprintf("o valor da média para as distâncias para o log01MB é: %f",media_add)
+sprintf("o valor da mediana para as distâncias para o log01MB é: %f",median_log1)
+sprintf("o valor da variância para as distâncias para o log01MB é: %f", variancia_add)
+sprintf("o valor do desvio padrão para as distâncias para o log01MB é: %f", dp_add)
+sprintf("o valor do coeficiente de variação para as distâncias para o log01MB é: %f%%", cv_add)
+sprintf("Com 95%% de confiança, o intervalo que compreende o verdadeiro valor da média está entre %f e %f.", ic_media_add[1], ic_media_add[2])
+```
+
+#Medidas estatísticas para log02MB
+
+```{r, echo=FALSE}
+aux_del = remove_outliers(log02_dif$diferenca_mem_n2)
+
+media_del = mean(aux_del, na.rm=TRUE)
+median_log2 = median(aux_del, na.rm=TRUE)
+variancia_del = var(aux_del, na.rm=TRUE)
+dp_del = sd(aux_del, na.rm=TRUE)
+cv_del = (dp_del/media_del)*100
+
+standError_media_del = dp_del/sqrt(tam_pop) 
+margemDeErro_del = qnorm(.975)*standError_media_del
+
+ic_media_del = media_del + c(-margemDeErro_del, margemDeErro_del)
+```
+
+```{r, echo=FALSE}
+sprintf("o valor da média para as distâncias log02MB é: %f", media_del)
+sprintf("o valor da mediana para as distâncias log02MB é: %f", median_log2)
+sprintf("o valor da variância para as distâncias log02MB é: %f", variancia_del)
+sprintf("o valor do desvio padrão para as distâncias log02MB é: %f", dp_del)
+sprintf("o valor do coeficiente de variação para as distâncias log02MB é: %f%%", cv_del)
+sprintf("Com 95%% de confiança, o intervalo que compreende o verdadeiro valor da média está entre %f e %f.", ic_media_del[1], ic_media_del[2])
+```
+
+##Medidas estatísticas para log03MB
+
+```{r, echo=FALSE}
+aux_250000_add = remove_outliers(log03_dif$diferenca_mem_n3)
+
+media_250000_add = mean(aux_250000_add, na.rm=TRUE)
+median_log3 = median(aux_250000_add, na.rm=TRUE)
+variancia_250000_add = var(aux_250000_add, na.rm=TRUE)
+dp_250000_add = sd(aux_250000_add, na.rm=TRUE)
+cv_250000_add = (dp_250000_add/media_250000_add)*100
+
+standError_media_250000_add = dp_250000_add/sqrt(tam_pop) 
+margemDeErro_250000_add = qnorm(.975)*standError_media_250000_add
+
+ic_media_250000_add = media_250000_add + c(-margemDeErro_250000_add, margemDeErro_250000_add)
+```
+
+```{r, echo=FALSE}
+sprintf("o valor da média para as distâncias log03MB é: %f", media_250000_add)
+sprintf("o valor da mediana para as distâncias log03MB é: %f", median_log3)
+sprintf("o valor da variância para as distâncias log03MB é: %f", variancia_250000_add)
+sprintf("o valor do desvio padrão para as distâncias log03MB é: %f", dp_250000_add)
+sprintf("o valor do coeficiente de variação para as distâncias log03MB é: %f%%", cv_250000_add)
+sprintf("Com 95%% de confiança, o intervalo que compreende o verdadeiro valor da média está entre %f e %f.", ic_media_250000_add[1], ic_media_250000_add[2])
+```
+
+#Medidas estatísticas para log04MB
+
+```{r, echo=FALSE}
+aux_del = remove_outliers(log04_dif$diferenca_mem_n4)
+
+media_del = mean(aux_del, na.rm=TRUE)
+median_log4 = median(aux_del, na.rm=TRUE)
+variancia_del = var(aux_del, na.rm=TRUE)
+dp_del = sd(aux_del, na.rm=TRUE)
+cv_del = (dp_del/media_del)*100
+
+standError_media_del = dp_del/sqrt(tam_pop) 
+margemDeErro_del = qnorm(.975)*standError_media_del
+
+ic_media_del = media_del + c(-margemDeErro_del, margemDeErro_del)
+```
+
+```{r, echo=FALSE}
+sprintf("o valor da média para as distâncias log04MB é: %f", media_del)
+sprintf("o valor da mediana para as distâncias log04MB é: %f", median_log4)
+sprintf("o valor da variância para as distâncias log04MB é: %f", variancia_del)
+sprintf("o valor do desvio padrão para as distâncias log04MB é: %f", dp_del)
+sprintf("o valor do coeficiente de variação para as distâncias log04MB é: %f%%", cv_del)
+sprintf("Com 95%% de confiança, o intervalo que compreende o verdadeiro valor da média está entre %f e %f.", ic_media_del[1], ic_media_del[2])
+```
+
+##Medidas estatísticas para log05MB
+
+```{r, echo=FALSE}
+aux_add = remove_outliers(log05_dif$diferenca_mem_n5)
+
+media_add = mean(aux_add, na.rm=TRUE)
+median_log5 = median(aux_add, na.rm=TRUE)
+variancia_add = var(aux_add, na.rm=TRUE)
+dp_add = sd(aux_add, na.rm=TRUE)
+cv_add = (dp_add/media_add)*100
+
+standError_media_add = dp_add/sqrt(tam_pop) 
+margemDeErro_add = qnorm(.975)*standError_media_add
+
+ic_media_add = media_add + c(-margemDeErro_add, margemDeErro_add)
+```
+
+```{r, echo=FALSE}
+sprintf("o valor da média para as distâncias para o log05MB é: %f",media_add)
+sprintf("o valor da mediana para as distâncias para o log05MB é: %f",median_log5)
+sprintf("o valor da variância para as distâncias para o log05MB é: %f", variancia_add)
+sprintf("o valor do desvio padrão para as distâncias para o log05MB é: %f", dp_add)
+sprintf("o valor do coeficiente de variação para as distâncias para o log05MB é: %f%%", cv_add)
+sprintf("Com 95%% de confiança, o intervalo que compreende o verdadeiro valor da média está entre %f e %f.", ic_media_add[1], ic_media_add[2])
+```
+
+#Medidas estatísticas para log06MB
+
+```{r, echo=FALSE}
+aux_del = remove_outliers(log06_dif$diferenca_mem_n6)
+
+media_del = mean(aux_del, na.rm=TRUE)
+median_log6 = median(aux_del, na.rm=TRUE)
+variancia_del = var(aux_del, na.rm=TRUE)
+dp_del = sd(aux_del, na.rm=TRUE)
+cv_del = (dp_del/media_del)*100
+
+standError_media_del = dp_del/sqrt(tam_pop) 
+margemDeErro_del = qnorm(.975)*standError_media_del
+
+ic_media_del = media_del + c(-margemDeErro_del, margemDeErro_del)
+```
+
+```{r, echo=FALSE}
+sprintf("o valor da média para as distâncias log06MB é: %f", media_del)
+sprintf("o valor da mediana para as distâncias log06MB é: %f", median_log6)
+sprintf("o valor da variância para as distâncias log06MB é: %f", variancia_del)
+sprintf("o valor do desvio padrão para as distâncias log06MB é: %f", dp_del)
+sprintf("o valor do coeficiente de variação para as distâncias log06MB é: %f%%", cv_del)
+sprintf("Com 95%% de confiança, o intervalo que compreende o verdadeiro valor da média está entre %f e %f.", ic_media_del[1], ic_media_del[2])
+```
+
+##Medidas estatísticas para log07MB
+
+```{r, echo=FALSE}
+aux_add =  remove_outliers(log07_dif$diferenca_mem_n7)
+
+media_add = mean(aux_add, na.rm=TRUE)
+median_log7 = median(aux_add, na.rm=TRUE)
+variancia_add = var(aux_add, na.rm=TRUE)
+dp_add = sd(aux_add, na.rm=TRUE)
+cv_add = (dp_add/media_add)*100
+
+standError_media_add = dp_add/sqrt(tam_pop) 
+margemDeErro_add = qnorm(.975)*standError_media_add
+
+ic_media_add = media_add + c(-margemDeErro_add, margemDeErro_add)
+```
+
+```{r, echo=FALSE}
+sprintf("o valor da média para as distâncias para o log07MB é: %f",media_add)
+sprintf("o valor da mediana para as distâncias para o log07MB é: %f",median_log7)
+sprintf("o valor da variância para as distâncias para o log07MB é: %f", variancia_add)
+sprintf("o valor do desvio padrão para as distâncias para o log07MB é: %f", dp_add)
+sprintf("o valor do coeficiente de variação para as distâncias para o log07MB é: %f%%", cv_add)
+sprintf("Com 95%% de confiança, o intervalo que compreende o verdadeiro valor da média está entre %f e %f.", ic_media_add[1], ic_media_add[2])
+```
+
+
+#Medidas estatísticas para log08MB
+
+```{r, echo=FALSE}
+aux_del =  remove_outliers(log08_dif$diferenca_mem_n8)
+
+media_del = mean(aux_del)
+median_log8 = median(aux_del)
+variancia_del = var(aux_del)
+dp_del = sd(aux_del)
+cv_del = (dp_del/media_del)*100
+
+standError_media_del = dp_del/sqrt(tam_pop) 
+margemDeErro_del = qnorm(.975)*standError_media_del
+
+ic_media_del = media_del + c(-margemDeErro_del, margemDeErro_del)
+```
+
+```{r, echo=FALSE}
+sprintf("o valor da média para as distâncias log08MB é: %f", media_del)
+sprintf("o valor da mediana para as distâncias log08MB é: %f", median_log8)
+sprintf("o valor da variância para as distâncias log08MB é: %f", variancia_del)
+sprintf("o valor do desvio padrão para as distâncias log08MB é: %f", dp_del)
+sprintf("o valor do coeficiente de variação para as distâncias log08MB é: %f%%", cv_del)
+sprintf("Com 95%% de confiança, o intervalo que compreende o verdadeiro valor da média está entre %f e %f.", ic_media_del[1], ic_media_del[2])
+```
+
+# Anexo II
+
+##Variações
+
+```{r, echo=FALSE}
+medians = c(median_log1, median_log2, median_log3, median_log4, median_log5, median_log6, median_log7, median_log8)
+
+names = c("a = Poucos usuarios, add, poucos caracteres", 
+          "b = Poucos usuarios, del, poucos caracteres", 
+          "c = Poucos usuarios, add, muitos caracteres", 
+          "d = Poucos usuarios, del, muitos caracteres", 
+          "e = Muitos usuarios, add, poucos caracteres", 
+          "f = Muitos usuarios, del, poucos caracteres",
+          "g = Muitos usuarios, add, muitos caracteres", 
+          "h = Muitos usuarios, del, muitos caracteres")
+
+mat<-matrix(list(), nrow=8, ncol=8)
+
+i = 1
+for (med in medians){
+  j = 1
+  for (aux in medians){
+    mat[i,j] = round(aux - med, 2)
+    j = j + 1
+  }
+  i = i + 1
+}
+rownames(mat) <- letters[1:8]
+colnames(mat) <- letters[1:8]
+```
+
+```{r}
+mat
+names
+```
+
+
+
